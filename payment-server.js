@@ -45,6 +45,20 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root service info
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    service: 'MTN MoMo Payment Service',
+    message: 'Service is running. Use /health or /api/payments/* endpoints.',
+    endpoints: {
+      health: '/health',
+      test: '/api/payments/test',
+      initiate: '/api/payments/initiate'
+    }
+  });
+});
+
 // Payment routes
 app.use('/api/payments', paymentRoutes);
 

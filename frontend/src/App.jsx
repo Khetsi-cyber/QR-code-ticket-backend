@@ -6,7 +6,7 @@ import DriverDashboard from "./components/DriverDashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import ResetPassword from "./components/ResetPassword";
 import Toast from "./components/Toast";
-import { supabase } from "./supabaseClient";
+import { supabase, hasSupabaseConfig } from "./supabaseClient";
 import { FiSun, FiMoon } from "react-icons/fi";
 
 function PrivateRoute({ children, role }) {
@@ -28,6 +28,23 @@ function PrivateRoute({ children, role }) {
 }
 
 export default function App() {
+  if (!hasSupabaseConfig) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "#f7f7f7" }}>
+        <div style={{ maxWidth: 760, width: "100%", background: "white", border: "1px solid #ddd", borderRadius: 12, padding: 24 }}>
+          <h2 style={{ marginTop: 0, color: "#C2185B" }}>Frontend Configuration Missing</h2>
+          <p style={{ marginBottom: 10 }}>Set these environment variables in your Render Static Site, then redeploy:</p>
+          <pre style={{ background: "#f3f3f3", padding: 12, borderRadius: 8, overflowX: "auto" }}>
+REACT_APP_SUPABASE_URL=your_supabase_project_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_API_BASE=https://your-backend.onrender.com
+REACT_APP_PAYMENT_API_URL=https://your-backend.onrender.com/api/payments
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
   const [me, setMe] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "info" });
   const [loading, setLoading] = useState(false);
