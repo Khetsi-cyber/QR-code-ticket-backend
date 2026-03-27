@@ -1,0 +1,38 @@
+{
+  "name": "bus-ticketing-backend-services",
+  "version": "1.0.0",
+  "description": "Backend services for bus ticketing: Email notifications and MTN MoMo payments",
+  "main": "email-service.js",
+  "type": "module",
+  "scripts": {
+    "start": "node email-service.js service",
+    "email": "node email-service.js service",
+    "email:once": "node email-service.js once",
+    "email:test": "EMAIL_SERVICE=console node email-service.js once",
+    "email:check": "node check-email-setup.js",
+    "payment": "node payment-server.js",
+    "dev": "concurrently \"npm run email\" \"npm run payment\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "email",
+    "notifications",
+    "mtn-momo",
+    "payments",
+    "supabase",
+    "bus-ticketing"
+  ],
+  "author": "",
+  "license": "ISC"
+}
