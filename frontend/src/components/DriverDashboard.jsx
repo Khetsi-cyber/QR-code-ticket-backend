@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
-import { QrReader } from "@blackbox-vision/react-qr-reader";
+import { Scanner } from "@yudiel/react-qr-scanner";
 import QRCode from "qrcode.react";
 import jsPDF from "jspdf";
 import {
@@ -362,48 +362,48 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
     }
   };
 
-  const handleScan = async (result, error) => {
-    // Handle camera/scanning errors
-    if (error) {
-      console.error("QR Scanner error:", error);
-      if (error.name === "NotAllowedError") {
-        setCameraStatus("error");
-        setCameraError("Camera permission denied. Please allow camera access in your browser settings.");
-      } else if (error.name === "NotFoundError") {
-        setCameraStatus("error");
-        setCameraError("No camera found on this device.");
-      } else if (error.name === "NotReadableError") {
-        setCameraStatus("error");
-        setCameraError("Camera is already in use by another application.");
-      }
-      return;
+  const handleScanError = (error) => {
+    if (!error) return;
+    console.error("QR Scanner error:", error);
+    if (error.name === "NotAllowedError") {
+      setCameraStatus("error");
+      setCameraError("Camera permission denied. Please allow camera access in your browser settings.");
+    } else if (error.name === "NotFoundError") {
+      setCameraStatus("error");
+      setCameraError("No camera found on this device.");
+    } else if (error.name === "NotReadableError") {
+      setCameraStatus("error");
+      setCameraError("Camera is already in use by another application.");
     }
+  };
 
-    // Handle successful scan
-    if (result) {
-      try {
-        const qrData = JSON.parse(result.text);
-        
-        const { data, error } = await supabase
-          .from("tickets")
-          .select("*, buses(bus_number)")
-          .eq("qr_code", result.text)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data.status === "used") {
-          showToast?.("This ticket has already been used!", "error");
-        } else if (data.status === "cancelled" || data.status === "expired") {
-          showToast?.(`This ticket is ${data.status}!`, "error");
-        } else {
-          setScannedTicket(data);
-          showToast?.("Ticket scanned successfully!", "success");
-        }
-      } catch (err) {
-        console.error("Error scanning ticket:", err);
-        showToast?.("Invalid QR code", "error");
+  const handleScan = async (results) => {
+    if (!Array.isArray(results) || results.length === 0) return;
+    const scannedText = results[0]?.rawValue;
+    if (!scannedText) return;
+
+    try {
+      JSON.parse(scannedText);
+
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*, buses(bus_number)")
+        .eq("qr_code", scannedText)
+        .single();
+
+      if (error) throw error;
+
+      if (data.status === "used") {
+        showToast?.("This ticket has already been used!", "error");
+      } else if (data.status === "cancelled" || data.status === "expired") {
+        showToast?.(`This ticket is ${data.status}!`, "error");
+      } else {
+        setScannedTicket(data);
+        showToast?.("Ticket scanned successfully!", "success");
       }
+    } catch (err) {
+      console.error("Error scanning ticket:", err);
+      showToast?.("Invalid QR code", "error");
     }
   };
 
@@ -1247,16 +1247,17 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
                   overflow: "hidden",
                   boxShadow: darkMode ? "0 2px 8px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(194, 24, 91, 0.2)"
                 }}>
-                  <QrReader
-                    onResult={handleScan}
-                    constraints={{ 
-                      facingMode: "environment"
-                    }}
-                    containerStyle={{ width: "100%" }}
-                    videoStyle={{ 
-                      width: "100%", 
-                      height: "350px",
-                      objectFit: "cover"
+                  <Scanner
+                    onScan={handleScan}
+                    onError={handleScanError}
+                    constraints={{ facingMode: "environment" }}
+                    styles={{
+                      container: { width: "100%" },
+                      video: {
+                        width: "100%",
+                        height: "350px",
+                        objectFit: "cover"
+                      }
                     }}
                   />
                   <div style={{ 
