@@ -80,25 +80,27 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('========================================');
-  console.log('MTN MoMo Payment Service Started');
-  console.log('========================================');
-  console.log(`⚡ Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.MOMO_ENVIRONMENT || 'sandbox'}`);
-  console.log(`💰 Currency: ${process.env.MOMO_CURRENCY || 'SZL'}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`🧪 Test endpoint: http://localhost:${PORT}/api/payments/test`);
-  console.log('========================================');
-  console.log('Available endpoints:');
-  console.log('  POST /api/payments/initiate - Start payment');
-  console.log('  GET  /api/payments/status/:ref - Check status');
-  console.log('  POST /api/payments/complete/:ref - Create ticket');
-  console.log('  POST /api/payments/verify-phone - Verify phone');
-  console.log('  GET  /api/payments/balance - Check balance');
-  console.log('========================================\n');
-});
+// Start server only when this file is run directly (local/dev usage).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(PORT, () => {
+    console.log('========================================');
+    console.log('MTN MoMo Payment Service Started');
+    console.log('========================================');
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.MOMO_ENVIRONMENT || 'sandbox'}`);
+    console.log(`Currency: ${process.env.MOMO_CURRENCY || 'SZL'}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`Test endpoint: http://localhost:${PORT}/api/payments/test`);
+    console.log('========================================');
+    console.log('Available endpoints:');
+    console.log('  POST /api/payments/initiate - Start payment');
+    console.log('  GET  /api/payments/status/:ref - Check status');
+    console.log('  POST /api/payments/complete/:ref - Create ticket');
+    console.log('  POST /api/payments/verify-phone - Verify phone');
+    console.log('  GET  /api/payments/balance - Check balance');
+    console.log('========================================\n');
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
