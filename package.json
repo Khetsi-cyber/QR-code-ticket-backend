@@ -12,6 +12,7 @@
     "email:check": "node check-email-setup.js",
     "payment": "node payment-server.js",
     "dev": "concurrently \"npm run email\" \"npm run payment\"",
+    "build": "mkdir -p public && rm -rf public/* && cd frontend && npm run build && cp -r build/* ../public/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
