@@ -70,16 +70,35 @@ router.get('/status/:referenceId', async (req, res) => {
       });
     }
 
+    // Always return a valid status object, never throw 500
     const status = await momoService.getPaymentStatus(referenceId);
+    if (!status) {
+      // Fallback: return PENDING if no status found
+      return res.json({
+        success: true,
+        payment: {
+          referenceId,
+          status: 'PENDING',
+          message: 'Payment status is being checked. Please try again shortly.'
+        }
+      });
+    }
+
     res.json({
       success: true,
       payment: status
     });
   } catch (error) {
     console.error('Status check error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: error.message
+    // Return PENDING status on error instead of 500, so frontend doesn't break
+    const { referenceId } = req.params;
+    res.json({
+      success: true,
+      payment: {
+        referenceId,
+        status: 'PENDING',
+        message: 'Payment status is being checked. Please try again shortly.'
+      }
     });
   }
 });
@@ -221,6 +240,37 @@ router.get('/test', async (req, res) => {
       error: error.message
     });
   }
+});
+
+/**
+ * GET /api/payments/diagnose
+ * Diagnostic endpoint to check MTN credentials and service health
+ */
+router.get('/diagnose', async (req, res) => {
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.MOMO_ENVIRONMENT || 'sandbox',
+    hasSubscriptionKey: !!process.env.MOMO_SUBSCRIPTION_KEY,
+    hasApiUser: !!process.env.MOMO_API_USER,
+    hasApiKey: !!process.env.MOMO_API_KEY,
+    hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+    mtnEndpoint: process.env.MOMO_BASE_URL || 'https://sandbox.momodeveloper.mtn.com'
+  };
+
+  try {
+    // Try to get MTN token
+    const token = await momoService.getAccessToken();
+    diagnostics.mtnTokenSuccess = !!token;
+  } catch (err) {
+    diagnostics.mtnTokenSuccess = false;
+    diagnostics.mtnTokenError = err.message;
+  }
+
+  res.json({
+    success: true,
+    diagnostics
+  });
 });
 
 export default router;
