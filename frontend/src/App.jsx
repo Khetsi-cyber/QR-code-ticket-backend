@@ -33,7 +33,7 @@ export default function App() {
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "#f7f7f7" }}>
         <div style={{ maxWidth: 760, width: "100%", background: "white", border: "1px solid #ddd", borderRadius: 12, padding: 24 }}>
           <h2 style={{ marginTop: 0, color: "#C2185B" }}>Frontend Configuration Missing</h2>
-          <p style={{ marginBottom: 10 }}>Set these environment variables in your Render Static Site, then redeploy:</p>
+          <p style={{ marginBottom: 10 }}>Set these environment variables in Vercel, then redeploy:</p>
           <pre style={{ background: "#f3f3f3", padding: 12, borderRadius: 8, overflowX: "auto" }}>
 REACT_APP_SUPABASE_URL=your_supabase_project_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key

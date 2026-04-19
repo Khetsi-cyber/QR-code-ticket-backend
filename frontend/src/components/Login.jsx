@@ -106,7 +106,12 @@ export default function Login({ onLogin }) {
         setSuccess(null);
       }, 2000);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      const message = err?.message || "Registration failed";
+      setError(
+        message.includes("Failed to fetch")
+          ? "Cannot reach the authentication service. Check your Supabase project URL and public anon key in Vercel, then redeploy."
+          : message
+      );
       setLoading(false);
     }
   };
@@ -152,7 +157,12 @@ export default function Login({ onLogin }) {
 
       if (onLogin) onLogin(user);
     } catch (err) {
-      setError(err.message || "Login failed");
+      const message = err?.message || "Login failed";
+      setError(
+        message.includes("Failed to fetch")
+          ? "Cannot reach the authentication service. Check your Supabase project URL and public anon key in Vercel, then redeploy."
+          : message
+      );
     } finally {
       setLoading(false);
     }
@@ -182,7 +192,12 @@ export default function Login({ onLogin }) {
         setSuccess(null);
       }, 3000);
     } catch (err) {
-      setError(err.message || "Failed to send reset email");
+      const message = err?.message || "Failed to send reset email";
+      setError(
+        message.includes("Failed to fetch")
+          ? "Cannot reach the authentication service. Check your Supabase project URL and public anon key in Vercel, then redeploy."
+          : message
+      );
     } finally {
       setLoading(false);
     }
