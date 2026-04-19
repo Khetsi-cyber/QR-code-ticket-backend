@@ -20,11 +20,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron-email",
-      "schedule": "*/5 * * * *"
-    }
   ]
 }
