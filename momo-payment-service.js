@@ -32,6 +32,7 @@ const supabase = createClient(
 // Token cache
 let accessToken = null;
 let tokenExpiry = null;
+const REQUEST_TIMEOUT_MS = Number(process.env.MOMO_TIMEOUT_MS || 15000);
 
 /**
  * Generate OAuth Access Token
@@ -52,7 +53,8 @@ export async function getAccessToken() {
         headers: {
           'Authorization': `Basic ${authString}`,
           'Ocp-Apim-Subscription-Key': MOMO_CONFIG.subscriptionKey
-        }
+        },
+        timeout: REQUEST_TIMEOUT_MS
       }
     );
 
@@ -64,6 +66,9 @@ export async function getAccessToken() {
     return accessToken;
   } catch (error) {
     console.error('✗ Failed to get access token:', error.response?.data || error.message);
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('MTN payment provider timed out. Please try again.');
+    }
     throw new Error('Authentication failed with MTN MoMo');
   }
 }
@@ -136,7 +141,8 @@ export async function requestToPay(paymentData) {
           'X-Target-Environment': MOMO_CONFIG.environment,
           'Ocp-Apim-Subscription-Key': MOMO_CONFIG.subscriptionKey,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: REQUEST_TIMEOUT_MS
       }
     );
 
@@ -184,7 +190,8 @@ export async function requestToPay(paymentData) {
         created_at: new Date().toISOString()
       });
 
-    throw new Error(error.response?.data?.message || 'Payment request failed');
+    const apiMessage = error.response?.data?.message || error.response?.data?.reason;
+    throw new Error(apiMessage || error.message || 'Payment request failed');
   }
 }
 
@@ -194,6 +201,26 @@ export async function requestToPay(paymentData) {
  * @returns {Object} Payment status
  */
 export async function getPaymentStatus(referenceId) {
+  // Fallback to latest DB status if MTN status API is temporarily unavailable
+  const getStoredPaymentStatus = async () => {
+    const { data: storedPayment } = await supabase
+      .from('payments')
+      .select('reference_id, status, amount, currency, financial_transaction_id')
+      .eq('reference_id', referenceId)
+      .single();
+
+    if (!storedPayment) return null;
+
+    return {
+      referenceId: storedPayment.reference_id,
+      status: (storedPayment.status || 'PENDING').toUpperCase(),
+      amount: storedPayment.amount,
+      currency: storedPayment.currency,
+      financialTransactionId: storedPayment.financial_transaction_id,
+      reason: 'Using last known status from database'
+    };
+  };
+
   try {
     const token = await getAccessToken();
 
@@ -204,11 +231,13 @@ export async function getPaymentStatus(referenceId) {
           'Authorization': `Bearer ${token}`,
           'X-Target-Environment': MOMO_CONFIG.environment,
           'Ocp-Apim-Subscription-Key': MOMO_CONFIG.subscriptionKey
-        }
+        },
+        timeout: REQUEST_TIMEOUT_MS
       }
     );
 
     const paymentData = response.data;
+    const normalizedStatus = (paymentData.status || 'PENDING').toUpperCase();
     
     // Log full response for debugging
     console.log(`Payment ${referenceId} full response:`, JSON.stringify(paymentData, null, 2));
@@ -217,17 +246,17 @@ export async function getPaymentStatus(referenceId) {
     await supabase
       .from('payments')
       .update({
-        status: paymentData.status,
+        status: normalizedStatus,
         financial_transaction_id: paymentData.financialTransactionId,
         updated_at: new Date().toISOString()
       })
       .eq('reference_id', referenceId);
 
-    console.log(`Payment ${referenceId} status: ${paymentData.status}${paymentData.reason ? ` - Reason: ${paymentData.reason}` : ''}`);
+    console.log(`Payment ${referenceId} status: ${normalizedStatus}${paymentData.reason ? ` - Reason: ${paymentData.reason}` : ''}`);
 
     return {
       referenceId,
-      status: paymentData.status, // PENDING, SUCCESSFUL, FAILED
+      status: normalizedStatus, // PENDING, SUCCESSFUL, FAILED, etc.
       amount: paymentData.amount,
       currency: paymentData.currency,
       financialTransactionId: paymentData.financialTransactionId,
@@ -235,7 +264,20 @@ export async function getPaymentStatus(referenceId) {
     };
   } catch (error) {
     console.error('✗ Status check failed:', error.response?.data || error.message);
-    throw new Error('Failed to check payment status');
+
+    const storedStatus = await getStoredPaymentStatus();
+    if (storedStatus) {
+      console.log(`Using stored payment status for ${referenceId}: ${storedStatus.status}`);
+      return storedStatus;
+    }
+
+    // Return PENDING instead of throwing, so we don't break the status check flow
+    console.warn(`No stored payment found for ${referenceId}, returning PENDING status`);
+    return {
+      referenceId,
+      status: 'PENDING',
+      message: 'Payment status temporarily unavailable. Please retry in a few moments.'
+    };
   }
 }
 
@@ -253,7 +295,8 @@ export async function getAccountBalance() {
           'Authorization': `Bearer ${token}`,
           'X-Target-Environment': MOMO_CONFIG.environment,
           'Ocp-Apim-Subscription-Key': MOMO_CONFIG.subscriptionKey
-        }
+        },
+        timeout: REQUEST_TIMEOUT_MS
       }
     );
 
@@ -279,7 +322,8 @@ export async function verifyAccountActive(phoneNumber) {
           'Authorization': `Bearer ${token}`,
           'X-Target-Environment': MOMO_CONFIG.environment,
           'Ocp-Apim-Subscription-Key': MOMO_CONFIG.subscriptionKey
-        }
+        },
+        timeout: REQUEST_TIMEOUT_MS
       }
     );
 
@@ -320,6 +364,7 @@ export async function processTicketPurchase(bookingData) {
     // Step 2: Return payment reference for status checking
     return {
       success: true,
+      referenceId: paymentResult.referenceId,
       paymentReferenceId: paymentResult.referenceId,
       message: 'Payment initiated. Waiting for customer approval...',
       status: 'PENDING_PAYMENT'
