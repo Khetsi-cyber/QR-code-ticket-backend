@@ -343,7 +343,7 @@ export default function Login({ onLogin }) {
             color: darkMode ? "#E0E0E0" : "#C2185B",
             fontSize: isMobile ? "1.05em" : "1.3em"
           }}>
-            QR Bus Ticketing System
+            Tiyandza Transport
           </h1>
         </div>
         

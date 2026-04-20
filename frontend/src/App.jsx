@@ -88,7 +88,7 @@ REACT_APP_PAYMENT_API_URL=https://your-backend.onrender.com/api/payments
     <div className="app">
       {showHeader && (
         <header className="app-header">
-          <h1>QR Bus Ticketing System</h1>
+          <h1>Tiyandza Transport</h1>
           {me && (
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span>Welcome, {me.username}!</span>
