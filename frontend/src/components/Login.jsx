@@ -324,7 +324,7 @@ export default function Login({ onLogin }) {
         zIndex: 1000,
         borderBottom: "2px solid #C2185B"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", width: isMobile ? "100%" : "auto", minWidth: 0 }}>
           <img 
             src="/images/logo.png" 
             alt="Logo" 
@@ -355,14 +355,15 @@ export default function Login({ onLogin }) {
               background: darkMode ? "#2C2C2C" : "white",
               border: "2px solid #C2185B",
               borderRadius: "20px",
-              padding: "8px 16px",
+              padding: isMobile ? "8px 12px" : "8px 16px",
               cursor: "pointer",
               color: "#C2185B",
               fontWeight: "600",
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              transition: "all 0.3s ease"
+              transition: "all 0.3s ease",
+              fontSize: isMobile ? "0.85em" : "1em"
             }}
             title="Menu"
           >
@@ -377,14 +378,15 @@ export default function Login({ onLogin }) {
               background: darkMode ? "#2C2C2C" : "white",
               border: darkMode ? "2px solid rgba(255, 255, 255, 0.2)" : "2px solid #C2185B",
               borderRadius: "20px",
-              padding: "8px 16px",
+              padding: isMobile ? "8px 12px" : "8px 16px",
               cursor: "pointer",
               color: "#C2185B",
               fontWeight: "600",
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              transition: "all 0.3s ease"
+              transition: "all 0.3s ease",
+              fontSize: isMobile ? "0.85em" : "1em"
             }}
             title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
@@ -416,14 +418,14 @@ export default function Login({ onLogin }) {
           position: "fixed",
           top: 0,
           right: 0,
-          width: isMobile ? "100vw" : "320px",
+          width: isMobile ? "100%" : "320px",
           maxWidth: "100%",
           height: "100vh",
           background: darkMode ? "#2C2C2C" : "white",
           boxShadow: "-4px 0 12px rgba(0,0,0,0.1)",
           zIndex: 1002,
           overflowY: "auto",
-          padding: "20px"
+          padding: isMobile ? "16px 12px" : "20px"
         }}>
           <button
             onClick={() => setMenuOpen(false)}
@@ -442,10 +444,10 @@ export default function Login({ onLogin }) {
           </button>
 
           <h3 style={{ 
-            marginTop: "60px", 
+            marginTop: isMobile ? "44px" : "60px", 
             marginBottom: "20px", 
             color: darkMode ? "#E0E0E0" : "#333",
-            fontSize: "1.2em"
+            fontSize: isMobile ? "1.05em" : "1.2em"
           }}>
             Quick Actions
           </h3>
@@ -563,7 +565,7 @@ export default function Login({ onLogin }) {
                 onClick={() => toggleSection(key)}
                 style={{
                   width: "100%",
-                  padding: "12px 14px",
+                  padding: isMobile ? "10px 12px" : "12px 14px",
                   marginBottom: "6px",
                   background: "transparent",
                   border: "2px solid #C2185B",
