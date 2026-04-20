@@ -50,6 +50,16 @@ export default function UserDashboard({ showToast }) {
   const [myEnquiries, setMyEnquiries] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -695,38 +705,41 @@ export default function UserDashboard({ showToast }) {
       minHeight: "100vh",
       backgroundImage: "url('/images/banner.jpg')",
       backgroundSize: "cover",
-      backgroundPosition: "center",
+      backgroundPosition: isMobile ? "center top" : "center",
       backgroundRepeat: "no-repeat",
-      backgroundAttachment: "fixed",
-      padding: "20px"
+      backgroundAttachment: isMobile ? "scroll" : "fixed",
+      padding: isMobile ? "12px" : "20px",
+      overflowX: "hidden"
     }}>
       {/* Top Navigation Bar */}
       <div style={{
-        position: "fixed",
+        position: isMobile ? "relative" : "fixed",
         top: 0,
         left: 0,
         right: 0,
-        padding: "12px 24px",
+        padding: isMobile ? "10px 12px" : "12px 24px",
         background: "white",
         backdropFilter: "blur(10px)",
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
+        gap: isMobile ? "10px" : "0",
         zIndex: 1000,
         borderBottom: "2px solid #C2185B"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", width: isMobile ? "100%" : "auto" }}>
           <img 
             src="/images/logo.png" 
             alt="Logo" 
-            style={{ height: "140px", width: "auto", objectFit: "contain" }}
+            style={{ height: isMobile ? "56px" : "140px", width: "auto", objectFit: "contain", maxWidth: isMobile ? "90px" : "none" }}
             onError={(e) => { e.target.style.display = 'none'; }}
           />
           <div>
             <h2 style={{ 
               margin: 0, 
               color: "#C2185B",
-              fontSize: "1.3em"
+              fontSize: isMobile ? "1.05em" : "1.3em"
             }}>
               Passenger Dashboard
             </h2>
@@ -742,7 +755,7 @@ export default function UserDashboard({ showToast }) {
           </div>
         </div>
         
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: isMobile ? "8px" : "16px", alignItems: "center", width: isMobile ? "100%" : "auto", justifyContent: isMobile ? "space-between" : "flex-end", flexWrap: "wrap" }}>
           {/* Notification Icon */}
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -757,7 +770,7 @@ export default function UserDashboard({ showToast }) {
             }}
             title="Notifications"
           >
-            <FiBell style={{ marginRight: 8 }} /> Notifications
+            {isMobile ? <FiBell size={18} /> : <><FiBell style={{ marginRight: 8 }} /> Notifications</>}
             {unreadCount > 0 && (
               <span style={{
                 position: "absolute",
@@ -786,7 +799,7 @@ export default function UserDashboard({ showToast }) {
               background: "white",
               border: "2px solid #C2185B",
               borderRadius: "20px",
-              padding: "8px 16px",
+              padding: isMobile ? "8px 12px" : "8px 16px",
               cursor: "pointer",
               fontSize: "0.9em",
               color: "#C2185B",
@@ -798,7 +811,7 @@ export default function UserDashboard({ showToast }) {
             title="Toggle Dark Mode"
           >
             {darkMode ? <FiSun /> : <FiMoon />}
-            {darkMode ? "Light Mode" : "Dark Mode"}
+            {isMobile ? (darkMode ? "Light" : "Dark") : (darkMode ? "Light Mode" : "Dark Mode")}
           </button>
 
           {/* Logout Button */}
@@ -808,7 +821,7 @@ export default function UserDashboard({ showToast }) {
               background: darkMode ? "#FF4444" : "#dc3545",
               border: "none",
               borderRadius: "20px",
-              padding: "8px 16px",
+              padding: isMobile ? "8px 12px" : "8px 16px",
               cursor: "pointer",
               fontSize: "0.9em",
               color: "white",
@@ -824,14 +837,15 @@ export default function UserDashboard({ showToast }) {
       {showNotifications && (
         <div style={{
           position: "fixed",
-          top: "60px",
-          right: "24px",
+          top: isMobile ? "120px" : "60px",
+          right: isMobile ? "12px" : "24px",
+          left: isMobile ? "12px" : "auto",
           background: "white",
           border: "2px solid #C2185B",
           borderRadius: "8px",
           padding: "16px",
-          minWidth: "300px",
-          maxWidth: "400px",
+          minWidth: isMobile ? "auto" : "300px",
+          maxWidth: isMobile ? "none" : "400px",
           maxHeight: "400px",
           overflowY: "auto",
           boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
@@ -1386,10 +1400,11 @@ export default function UserDashboard({ showToast }) {
 
       {/* Horizontal Navigation Menu */}
       <div style={{
-        position: "fixed",
-        top: "164px",
+        position: isMobile ? "relative" : "fixed",
+        top: isMobile ? "0" : "164px",
         left: 0,
         right: 0,
+        marginTop: isMobile ? "12px" : "0",
         padding: "0",
         background: darkMode ? "#2C2C2C" : "white",
         borderBottom: "2px solid #C2185B",
@@ -1400,8 +1415,9 @@ export default function UserDashboard({ showToast }) {
           maxWidth: "1200px",
           margin: "0 auto",
           display: "flex",
-          justifyContent: "center",
-          gap: "0"
+          justifyContent: isMobile ? "flex-start" : "center",
+          gap: "0",
+          overflowX: isMobile ? "auto" : "visible"
         }}>
           {[
             { id: 'home', label: 'Home', icon: FiHome },
@@ -1413,8 +1429,9 @@ export default function UserDashboard({ showToast }) {
               key={item.id}
               onClick={() => setActiveMenu(item.id)}
               style={{
-                flex: 1,
-                padding: "16px 24px",
+                flex: isMobile ? "0 0 auto" : 1,
+                minWidth: isMobile ? "110px" : "auto",
+                padding: isMobile ? "12px 14px" : "16px 24px",
                 background: activeMenu === item.id 
                   ? (darkMode ? "#C2185B" : "#C2185B") 
                   : "transparent",
@@ -1423,7 +1440,7 @@ export default function UserDashboard({ showToast }) {
                 color: activeMenu === item.id ? "white" : (darkMode ? "#E0E0E0" : "#666"),
                 fontWeight: activeMenu === item.id ? "700" : "500",
                 cursor: "pointer",
-                fontSize: "1em",
+                fontSize: isMobile ? "0.9em" : "1em",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1448,7 +1465,7 @@ export default function UserDashboard({ showToast }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 800, margin: "240px auto 0", padding: 20 }}>
+      <div style={{ maxWidth: 800, margin: isMobile ? "16px auto 0" : "240px auto 0", padding: isMobile ? 8 : 20 }}>
 
       {/* HOME - Booking Section */}
       {activeMenu === 'home' && (
@@ -1456,7 +1473,7 @@ export default function UserDashboard({ showToast }) {
       {step === -1 && (
         <div style={{
           textAlign: "center",
-          padding: "60px 20px",
+          padding: isMobile ? "32px 14px" : "60px 20px",
           background: darkMode ? "rgba(44, 44, 44, 0.95)" : "white",
           borderRadius: "20px",
           boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
@@ -1469,14 +1486,14 @@ export default function UserDashboard({ showToast }) {
             alignItems: "center"
           }}>
             <FiTruck 
-              size={80} 
+              size={isMobile ? 56 : 80} 
               color={darkMode ? "#FFB6D9" : "#C2185B"}
               style={{ strokeWidth: 1.5 }}
             />
           </div>
           <h2 style={{ 
             color: darkMode ? "#FFB6D9" : "#C2185B",
-            fontSize: "2.5em",
+            fontSize: isMobile ? "1.8em" : "2.5em",
             marginBottom: "15px",
             fontWeight: "700"
           }}>
@@ -1484,7 +1501,7 @@ export default function UserDashboard({ showToast }) {
           </h2>
           <p style={{ 
             color: darkMode ? "#ccc" : "#666",
-            fontSize: "1.2em",
+            fontSize: isMobile ? "1em" : "1.2em",
             marginBottom: "40px",
             lineHeight: "1.6"
           }}>
@@ -1496,8 +1513,10 @@ export default function UserDashboard({ showToast }) {
             className="login-btn"
             style={{
               background: "linear-gradient(135deg, #C2185B 0%, #FF69B4 100%)",
-              fontSize: "1.3em",
-              padding: "18px 60px",
+              fontSize: isMobile ? "1.05em" : "1.3em",
+              padding: isMobile ? "14px 24px" : "18px 60px",
+              width: isMobile ? "100%" : "auto",
+              maxWidth: isMobile ? "320px" : "none",
               border: "none",
               borderRadius: "50px",
               color: "white",
@@ -2523,7 +2542,7 @@ export default function UserDashboard({ showToast }) {
                   {/* Left Side - Ticket Details */}
                   <div style={{ 
                     flex: 1, 
-                    minWidth: 300,
+                    minWidth: isMobile ? "100%" : 300,
                     padding: 25,
                     borderRight: darkMode ? "2px dashed rgba(255, 255, 255, 0.2)" : "2px dashed #d0d0d0",
                     position: "relative"
@@ -2532,8 +2551,10 @@ export default function UserDashboard({ showToast }) {
                     <div style={{ marginBottom: 25 }}>
                       <div style={{ 
                         display: "flex", 
-                        alignItems: "center", 
+                        flexDirection: isMobile ? "column" : "row",
+                        alignItems: isMobile ? "flex-start" : "center", 
                         justifyContent: "space-between",
+                        gap: isMobile ? 12 : 0,
                         marginBottom: 15
                       }}>
                         <div style={{ flex: 1 }}>
@@ -2550,14 +2571,15 @@ export default function UserDashboard({ showToast }) {
                         </div>
                         
                         <div style={{ 
-                          padding: "0 20px",
-                          fontSize: "1.8em",
-                          color: "#FFB6D9"
+                          padding: isMobile ? "0" : "0 20px",
+                          fontSize: isMobile ? "1.4em" : "1.8em",
+                          color: "#FFB6D9",
+                          alignSelf: isMobile ? "center" : "auto"
                         }}>
                           →
                         </div>
                         
-                        <div style={{ flex: 1, textAlign: "right" }}>
+                        <div style={{ flex: 1, textAlign: isMobile ? "left" : "right" }}>
                           <div style={{ fontSize: "0.75em", color: darkMode ? "#B0B0B0" : "#666", marginBottom: 6 }}>
                             TO
                           </div>
@@ -2575,7 +2597,7 @@ export default function UserDashboard({ showToast }) {
                     {/* Ticket Details Grid */}
                     <div style={{ 
                       display: "grid", 
-                      gridTemplateColumns: "1fr 1fr",
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                       gap: "15px"
                     }}>
                       <div>

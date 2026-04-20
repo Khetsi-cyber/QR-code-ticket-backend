@@ -1332,8 +1332,7 @@ By using our service, you agree to this Privacy Policy.`
       backgroundImage: "url('/images/banner.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      backgroundAttachment: "fixed"
+      backgroundRepeat: "no-repeat"
     }}>
       {/* Background overlay */}
       <div style={{

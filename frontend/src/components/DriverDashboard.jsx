@@ -624,7 +624,6 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-      backgroundAttachment: "fixed",
       position: "relative"
     }}>
       {/* Background overlay */}
