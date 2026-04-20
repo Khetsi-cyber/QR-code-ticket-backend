@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import QRCode from "qrcode.react";
@@ -34,6 +34,7 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
   const [loadingSeating, setLoadingSeating] = useState(false);
   const [scanMode, setScanMode] = useState(false);
   const [scannedTicket, setScannedTicket] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
   const [cameraStatus, setCameraStatus] = useState("idle"); // idle, loading, ready, error
   const [cameraError, setCameraError] = useState("");
   const [showBulkProduction, setShowBulkProduction] = useState(false);
@@ -67,6 +68,8 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
     message: '',
     reportedBy: ''
   });
+  const lastScannedRef = useRef({ value: "", time: 0 });
+  const scanProcessingRef = useRef(false);
 
   useEffect(() => {
     loadBuses();
@@ -380,7 +383,15 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
   const handleScan = async (results) => {
     if (!Array.isArray(results) || results.length === 0) return;
     const scannedText = results[0]?.rawValue;
-    if (!scannedText) return;
+    if (!scannedText || scanProcessingRef.current) return;
+
+    const now = Date.now();
+    if (lastScannedRef.current.value === scannedText && now - lastScannedRef.current.time < 3000) {
+      return;
+    }
+
+    lastScannedRef.current = { value: scannedText, time: now };
+    scanProcessingRef.current = true;
 
     try {
       JSON.parse(scannedText);
@@ -391,19 +402,38 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
         .eq("qr_code", scannedText)
         .single();
 
-      if (error) throw error;
+      if (error || !data) throw error || new Error("Ticket not found");
+
+      setScannedTicket(data);
 
       if (data.status === "used") {
-        showToast?.("This ticket has already been used!", "error");
+        setScanResult({
+          type: "invalid",
+          title: "INVALID, Declined",
+          message: "This ticket has already been used."
+        });
+        showToast?.("INVALID, Declined", "error");
       } else if (data.status === "cancelled" || data.status === "expired") {
-        showToast?.(`This ticket is ${data.status}!`, "error");
+        setScanResult({
+          type: "invalid",
+          title: "INVALID, Declined",
+          message: `This ticket is ${data.status}.`
+        });
+        showToast?.("INVALID, Declined", "error");
       } else {
-        setScannedTicket(data);
-        showToast?.("Ticket scanned successfully!", "success");
+        await markTicketAsUsed(data);
       }
     } catch (err) {
       console.error("Error scanning ticket:", err);
-      showToast?.("Invalid QR code", "error");
+      setScannedTicket(null);
+      setScanResult({
+        type: "invalid",
+        title: "INVALID, Declined",
+        message: "Invalid QR code or ticket not found."
+      });
+      showToast?.("INVALID, Declined", "error");
+    } finally {
+      scanProcessingRef.current = false;
     }
   };
 
@@ -413,9 +443,13 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
       setCameraStatus("idle");
       setCameraError("");
       setScannedTicket(null);
+      setScanResult(null);
+      lastScannedRef.current = { value: "", time: 0 };
     } else {
       setScanMode(true);
       setCameraStatus("loading");
+      setScannedTicket(null);
+      setScanResult(null);
     }
   };
 
@@ -425,25 +459,33 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
     // The useEffect will set it to ready after delay
   };
 
-  const markTicketAsUsed = async (ticketId) => {
+  const markTicketAsUsed = async (ticket) => {
     try {
+      const usedAt = new Date().toISOString();
       const { error } = await supabase
         .from("tickets")
-        .update({ status: "used", used_at: new Date().toISOString() })
-        .eq("id", ticketId);
+        .update({ status: "used", used_at: usedAt })
+        .eq("id", ticket.id);
       
       if (error) throw error;
-      
-      showToast?.("Ticket marked as used", "success");
-      setScannedTicket(null);
-      setScanMode(false);
-      setCameraStatus("idle");
-      setCameraError("");
+
+      setScannedTicket({ ...ticket, status: "used", used_at: usedAt });
+      setScanResult({
+        type: "valid",
+        title: "VALID, Accepted",
+        message: "Ticket verified and accepted for boarding."
+      });
+      showToast?.("VALID, Accepted", "success");
       await loadBuses();
       await loadTickets();
     } catch (err) {
       console.error("Error marking ticket:", err);
-      showToast?.("Failed to mark ticket as used", "error");
+      setScanResult({
+        type: "invalid",
+        title: "INVALID, Declined",
+        message: "Failed to validate this ticket. Please try again."
+      });
+      showToast?.("INVALID, Declined", "error");
     }
   };
 
@@ -1302,6 +1344,33 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
             )}
           </div>
 
+          {/* Scan Result */}
+          {scanResult && (
+            <div style={{ 
+              padding: 20,
+              marginTop: 20,
+              background: scanResult.type === "valid"
+                ? (darkMode ? "rgba(76, 175, 80, 0.15)" : "#E8F5E9")
+                : (darkMode ? "rgba(244, 67, 54, 0.15)" : "#FFEBEE"),
+              borderRadius: 12,
+              border: scanResult.type === "valid" ? "3px solid #4CAF50" : "3px solid #F44336",
+              boxShadow: darkMode ? "0 4px 6px rgba(0, 0, 0, 0.3)" : "0 4px 6px rgba(0,0,0,0.08)",
+              textAlign: "center"
+            }}>
+              <div style={{
+                color: scanResult.type === "valid" ? "#2E7D32" : "#C62828",
+                fontSize: "1.35em",
+                fontWeight: "800",
+                marginBottom: 8
+              }}>
+                {scanResult.title}
+              </div>
+              <div style={{ color: darkMode ? "#E0E0E0" : "#444", fontSize: "0.98em" }}>
+                {scanResult.message}
+              </div>
+            </div>
+          )}
+
           {/* Scanned Ticket Details */}
           {scannedTicket && (
             <div style={{ 
@@ -1372,23 +1441,6 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
                   <div style={{ color: darkMode ? "#E0E0E0" : "#333" }}>{new Date(scannedTicket.created_at).toLocaleString()}</div>
                 </div>
               </div>
-              {scannedTicket.status === "active" && (
-                <button
-                  onClick={() => markTicketAsUsed(scannedTicket.id)}
-                  className="login-btn"
-                  style={{ 
-                    marginTop: 15, 
-                    background: "#C2185B", 
-                    color: "white", 
-                    border: "2px solid #C2185B",
-                    width: "100%",
-                    fontSize: "1em",
-                    fontWeight: "bold"
-                  }}
-                >
-                  ✓ Mark as Used
-                </button>
-              )}
             </div>
           )}
         </>
