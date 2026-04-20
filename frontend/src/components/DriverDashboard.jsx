@@ -70,6 +70,7 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
   });
   const lastScannedRef = useRef({ value: "", time: 0 });
   const scanProcessingRef = useRef(false);
+  const feedbackTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadBuses();
@@ -117,6 +118,14 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
       setDestinations([]);
     }
   }, [scheduleForm.departure_location]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadBuses = async () => {
     try {
@@ -365,6 +374,54 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
     }
   };
 
+  const playScanTone = (type) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const context = new AudioCtx();
+      const makeBeep = (frequency, startAt, duration, volume = 0.05) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, context.currentTime + startAt);
+        gain.gain.setValueAtTime(0.0001, context.currentTime + startAt);
+        gain.gain.exponentialRampToValueAtTime(volume, context.currentTime + startAt + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + startAt + duration);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(context.currentTime + startAt);
+        oscillator.stop(context.currentTime + startAt + duration);
+      };
+
+      if (type === "valid") {
+        makeBeep(880, 0, 0.12);
+        makeBeep(1175, 0.14, 0.16);
+      } else {
+        makeBeep(320, 0, 0.18);
+        makeBeep(220, 0.2, 0.22);
+      }
+
+      setTimeout(() => context.close().catch(() => {}), 700);
+    } catch (err) {
+      console.warn("Could not play scan tone:", err);
+    }
+  };
+
+  const showScanFeedback = (result, ticket = null) => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+    }
+
+    setScanResult(result);
+    setScannedTicket(ticket);
+
+    feedbackTimeoutRef.current = setTimeout(() => {
+      setScanResult(null);
+      setScannedTicket(null);
+    }, 2200);
+  };
+
   const handleScanError = (error) => {
     if (!error) return;
     console.error("QR Scanner error:", error);
@@ -404,29 +461,29 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
 
       if (error || !data) throw error || new Error("Ticket not found");
 
-      setScannedTicket(data);
-
       if (data.status === "used") {
-        setScanResult({
+        playScanTone("invalid");
+        showScanFeedback({
           type: "invalid",
           title: "INVALID, Declined",
           message: "This ticket has already been used."
-        });
+        }, data);
         showToast?.("INVALID, Declined", "error");
       } else if (data.status === "cancelled" || data.status === "expired") {
-        setScanResult({
+        playScanTone("invalid");
+        showScanFeedback({
           type: "invalid",
           title: "INVALID, Declined",
           message: `This ticket is ${data.status}.`
-        });
+        }, data);
         showToast?.("INVALID, Declined", "error");
       } else {
         await markTicketAsUsed(data);
       }
     } catch (err) {
       console.error("Error scanning ticket:", err);
-      setScannedTicket(null);
-      setScanResult({
+      playScanTone("invalid");
+      showScanFeedback({
         type: "invalid",
         title: "INVALID, Declined",
         message: "Invalid QR code or ticket not found."
@@ -445,6 +502,9 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
       setScannedTicket(null);
       setScanResult(null);
       lastScannedRef.current = { value: "", time: 0 };
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
     } else {
       setScanMode(true);
       setCameraStatus("loading");
@@ -469,22 +529,23 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
       
       if (error) throw error;
 
-      setScannedTicket({ ...ticket, status: "used", used_at: usedAt });
-      setScanResult({
+      playScanTone("valid");
+      showScanFeedback({
         type: "valid",
         title: "VALID, Accepted",
         message: "Ticket verified and accepted for boarding."
-      });
+      }, { ...ticket, status: "used", used_at: usedAt });
       showToast?.("VALID, Accepted", "success");
       await loadBuses();
       await loadTickets();
     } catch (err) {
       console.error("Error marking ticket:", err);
-      setScanResult({
+      playScanTone("invalid");
+      showScanFeedback({
         type: "invalid",
         title: "INVALID, Declined",
         message: "Failed to validate this ticket. Please try again."
-      });
+      }, ticket);
       showToast?.("INVALID, Declined", "error");
     }
   };
@@ -1329,6 +1390,7 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
                 }}>
                   <p style={{ margin: "0 0 10px 0", fontWeight: "bold", color: darkMode ? "#E0E0E0" : "#C2185B" }}>Tips for Better Scanning</p>
                   <ul style={{ margin: 0, paddingLeft: 20, fontSize: "0.9em", color: darkMode ? "#B0B0B0" : "#666" }}>
+                    <li>Continuous scanning is active while the camera stays open</li>
                     <li>Hold the QR code 6-12 inches from the camera</li>
                     <li>Make sure there's good lighting</li>
                     <li>Keep the QR code flat and clear</li>
