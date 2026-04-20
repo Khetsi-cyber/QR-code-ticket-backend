@@ -29,6 +29,9 @@ export default function Login({ onLogin }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
   
   // Shuttle booking state
   const [shuttleBooking, setShuttleBooking] = useState({
@@ -44,6 +47,13 @@ export default function Login({ onLogin }) {
   });
 
   
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Clear old session on component mount
   useEffect(() => {
     const clearOldSession = async () => {
@@ -275,13 +285,13 @@ export default function Login({ onLogin }) {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: "100px 20px 40px 20px",
+      padding: isMobile ? "12px 10px 20px 10px" : "100px 20px 40px 20px",
       backgroundImage: "url('/images/banner.jpg')",
       backgroundSize: "cover",
-      backgroundPosition: "center",
+      backgroundPosition: isMobile ? "center top" : "center",
       backgroundRepeat: "no-repeat",
       position: "relative",
-      overflow: "hidden",
+      overflowX: "hidden",
       transition: "background 0.3s"
     }}>
       {/* Background overlay for readability */}
@@ -299,16 +309,18 @@ export default function Login({ onLogin }) {
       <div style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
       {/* Header Banner */}
       <header style={{
-        position: "fixed",
+        position: isMobile ? "relative" : "fixed",
         top: 0,
         left: 0,
         right: 0,
-        padding: "12px 24px",
+        padding: isMobile ? "10px 12px" : "12px 24px",
         background: darkMode ? "rgba(44, 44, 44, 0.95)" : "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(10px)",
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
+        gap: isMobile ? "10px" : "0",
         zIndex: 1000,
         borderBottom: "2px solid #C2185B"
       }}>
@@ -317,7 +329,7 @@ export default function Login({ onLogin }) {
             src="/images/logo.png" 
             alt="Logo" 
             style={{ 
-              height: "140px",
+              height: isMobile ? "56px" : "140px",
               width: "auto",
               objectFit: "contain"
             }}
@@ -329,13 +341,13 @@ export default function Login({ onLogin }) {
           <h1 style={{ 
             margin: 0, 
             color: darkMode ? "#E0E0E0" : "#C2185B",
-            fontSize: "1.3em"
+            fontSize: isMobile ? "1.05em" : "1.3em"
           }}>
             QR Bus Ticketing System
           </h1>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", width: isMobile ? "100%" : "auto", justifyContent: isMobile ? "space-between" : "flex-end", flexWrap: "wrap" }}>
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -404,7 +416,8 @@ export default function Login({ onLogin }) {
           position: "fixed",
           top: 0,
           right: 0,
-          width: "320px",
+          width: isMobile ? "100vw" : "320px",
+          maxWidth: "100%",
           height: "100vh",
           background: darkMode ? "#2C2C2C" : "white",
           boxShadow: "-4px 0 12px rgba(0,0,0,0.1)",
@@ -595,8 +608,8 @@ export default function Login({ onLogin }) {
         width: "100%",
         maxWidth: "900px",
         background: darkMode ? "#2C2C2C" : "white",
-        borderRadius: "24px",
-        padding: "48px",
+        borderRadius: isMobile ? "16px" : "24px",
+        padding: isMobile ? "18px 14px" : "48px",
         boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
         border: "3px solid #C2185B"
       }}>
@@ -606,8 +619,8 @@ export default function Login({ onLogin }) {
             src="/images/banner.jpg" 
             alt="Tiyandza Transport" 
             style={{
-              width: "120px",
-              height: "120px",
+              width: isMobile ? "90px" : "120px",
+              height: isMobile ? "90px" : "120px",
               margin: "0 auto 20px",
               borderRadius: "20px",
               objectFit: "cover",
@@ -624,7 +637,7 @@ export default function Login({ onLogin }) {
           />
           <h1 style={{ 
             margin: 0, 
-            fontSize: "1.8em", 
+            fontSize: isMobile ? "1.4em" : "1.8em", 
             color: darkMode ? "#E0E0E0" : "#333",
             fontWeight: "700",
             marginBottom: "8px"
@@ -823,7 +836,7 @@ export default function Login({ onLogin }) {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 15 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: "600", color: darkMode ? "#E0E0E0" : "#555", fontSize: "0.95em" }}>From (Departure) *</label>
                   <select
@@ -901,7 +914,7 @@ export default function Login({ onLogin }) {
                 </select>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: shuttleBooking.trip_type === "return" ? "1fr 1fr" : "1fr", gap: 15 }}>
+              <div style={{ display: "grid", gridTemplateColumns: shuttleBooking.trip_type === "return" ? (isMobile ? "1fr" : "1fr 1fr") : "1fr", gap: 15 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: "600", color: darkMode ? "#E0E0E0" : "#555", fontSize: "0.95em" }}>Outbound Date *</label>
                   <input
