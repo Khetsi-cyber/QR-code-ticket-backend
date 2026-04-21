@@ -2169,6 +2169,17 @@ export default function UserDashboard({ showToast }) {
                       {ticket.status}
                     </span>
                   </div>
+
+                  {ticket.seat_numbers && ticket.seat_numbers.length > 0 && (
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <div style={{ fontSize: "0.7em", color: "#666", marginBottom: 3 }}>
+                        SEAT NUMBER{ticket.seat_numbers.length > 1 ? "S" : ""}
+                      </div>
+                      <div style={{ fontSize: "1.1em", fontWeight: "700", color: "#C2185B", letterSpacing: "1px" }}>
+                        {ticket.seat_numbers.join(", ")}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2693,6 +2704,17 @@ export default function UserDashboard({ showToast }) {
                           {ticket.status}
                         </span>
                       </div>
+
+                      {ticket.seat_numbers && ticket.seat_numbers.length > 0 && (
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <div style={{ fontSize: "0.7em", color: darkMode ? "#B0B0B0" : "#666", marginBottom: 3 }}>
+                            SEAT NUMBER{ticket.seat_numbers.length > 1 ? "S" : ""}
+                          </div>
+                          <div style={{ fontSize: "1.1em", fontWeight: "700", color: "#C2185B", letterSpacing: "1px" }}>
+                            {ticket.seat_numbers.join(", ")}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
