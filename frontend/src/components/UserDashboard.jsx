@@ -75,9 +75,16 @@ export default function UserDashboard({ showToast }) {
   useEffect(() => {
     // Check if user is authenticated
     const checkAuth = async () => {
-      // getSession reads from localStorage — no network call, always reliable
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      // Primary source: the user object stored in localStorage on login
+      const storedUser = localStorage.getItem("user");
+      let user = storedUser ? JSON.parse(storedUser) : null;
+
+      if (!user) {
+        // Fallback: read Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+      }
+
       console.log("Current user:", user);
       if (!user) {
         console.error("No user found - redirecting might be needed");
@@ -594,14 +601,19 @@ export default function UserDashboard({ showToast }) {
     setLoading(true);
     setError(null);
     try {
-      // Use cached user; fall back to the local session (no network call)
+      // Primary: use cached user in state; fall back to localStorage then session
       let user = currentUser;
+      if (!user) {
+        const storedUser = localStorage.getItem("user");
+        user = storedUser ? JSON.parse(storedUser) : null;
+        if (user) setCurrentUser(user);
+      }
       if (!user) {
         const { data: { session } } = await supabase.auth.getSession();
         user = session?.user ?? null;
         if (user) setCurrentUser(user);
       }
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error("Session expired. Please log in again.");
 
       const totalFare = fare * totalPassengers;
 
@@ -636,11 +648,16 @@ export default function UserDashboard({ showToast }) {
     try {
       let user = currentUser;
       if (!user) {
+        const storedUser = localStorage.getItem("user");
+        user = storedUser ? JSON.parse(storedUser) : null;
+        if (user) setCurrentUser(user);
+      }
+      if (!user) {
         const { data: { session } } = await supabase.auth.getSession();
         user = session?.user ?? null;
         if (user) setCurrentUser(user);
       }
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error("Session expired. Please log in again.");
 
       // Generate QR code data
       const qrData = JSON.stringify({
