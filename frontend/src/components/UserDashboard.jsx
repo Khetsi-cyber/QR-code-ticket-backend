@@ -63,11 +63,22 @@ export default function UserDashboard({ showToast }) {
   }, []);
 
   useEffect(() => {
+    // Track auth state changes (token refreshes, signIn, signOut)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
+      }
+    });
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     // Check if user is authenticated
     const checkAuth = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // getSession reads from localStorage — no network call, always reliable
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       console.log("Current user:", user);
-      console.log("Auth error:", error);
       if (!user) {
         console.error("No user found - redirecting might be needed");
       } else {
@@ -583,11 +594,12 @@ export default function UserDashboard({ showToast }) {
     setLoading(true);
     setError(null);
     try {
-      // Use cached user; fall back to a fresh session read only if needed
+      // Use cached user; fall back to the local session (no network call)
       let user = currentUser;
       if (!user) {
         const { data: { session } } = await supabase.auth.getSession();
         user = session?.user ?? null;
+        if (user) setCurrentUser(user);
       }
       if (!user) throw new Error("Not authenticated");
 
@@ -626,6 +638,7 @@ export default function UserDashboard({ showToast }) {
       if (!user) {
         const { data: { session } } = await supabase.auth.getSession();
         user = session?.user ?? null;
+        if (user) setCurrentUser(user);
       }
       if (!user) throw new Error("Not authenticated");
 
