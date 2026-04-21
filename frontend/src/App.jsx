@@ -81,8 +81,8 @@ REACT_APP_PAYMENT_API_URL=https://your-backend.onrender.com/api/payments
     navigate("/login");
   };
 
-  // No loading screen needed anymore
-  const showHeader = location.pathname !== "/" && location.pathname !== "/login";
+  // Dashboards have their own self-contained headers, so suppress the app-level header for them
+  const showHeader = false;
   
   return (
     <div className="app">
