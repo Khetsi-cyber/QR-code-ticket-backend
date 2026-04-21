@@ -12,6 +12,7 @@ import PaymentModal from "./PaymentModal";
 export default function UserDashboard({ showToast }) {
   const [activeMenu, setActiveMenu] = useState('home'); // 'home', 'enquiry', 'myTickets', 'reviews'
   const [step, setStep] = useState(-1); // -1: landing page, 0: select departure, 1: select destination, 2: confirm fare, 3: select seats, 4: show QR
+  const [currentUser, setCurrentUser] = useState(null);
   const [buses, setBuses] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
   const [departures, setDepartures] = useState([]);
@@ -70,6 +71,7 @@ export default function UserDashboard({ showToast }) {
       if (!user) {
         console.error("No user found - redirecting might be needed");
       } else {
+        setCurrentUser(user);
         // Load passenger profile
         const { data: profileData } = await supabase
           .from("profiles")
@@ -581,7 +583,12 @@ export default function UserDashboard({ showToast }) {
     setLoading(true);
     setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Use cached user; fall back to a fresh session read only if needed
+      let user = currentUser;
+      if (!user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+      }
       if (!user) throw new Error("Not authenticated");
 
       const totalFare = fare * totalPassengers;
@@ -615,7 +622,11 @@ export default function UserDashboard({ showToast }) {
   const handlePaymentSuccess = async (paymentReference) => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      let user = currentUser;
+      if (!user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        user = session?.user ?? null;
+      }
       if (!user) throw new Error("Not authenticated");
 
       // Generate QR code data
