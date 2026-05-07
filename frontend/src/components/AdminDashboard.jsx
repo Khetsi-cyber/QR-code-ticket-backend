@@ -46,7 +46,8 @@ import {
   FiInfo
 } from "react-icons/fi";
 
-export default function AdminDashboard({ showToast, darkMode = false }) {
+export default function AdminDashboard({ showToast, darkMode: darkModeProp = false }) {
+  const [darkMode, setDarkMode] = useState(darkModeProp);
   const [tickets, setTickets] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1469,16 +1470,60 @@ By using our service, you agree to this Privacy Policy.`
         position: "relative",
         zIndex: 1
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: 20 }}>
-          <img 
-            src="/images/logo.png" 
-            alt="Logo" 
-            style={{ height: "140px", width: "auto", objectFit: "contain" }}
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-          <h2 style={{ color: darkMode ? "#E0E0E0" : "#C2185B", textAlign: "center", fontSize: "2em", margin: 0 }}>
-            {menuItems.flatMap(s => s.items).find(i => i.id === activeMenu)?.label || "Admin Dashboard"}
-          </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <img 
+              src="/images/logo.png" 
+              alt="Logo" 
+              style={{ height: "140px", width: "auto", objectFit: "contain" }}
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <h2 style={{ color: darkMode ? "#E0E0E0" : "#C2185B", textAlign: "center", fontSize: "2em", margin: 0 }}>
+              {menuItems.flatMap(s => s.items).find(i => i.id === activeMenu)?.label || "Admin Dashboard"}
+            </h2>
+          </div>
+          {/* Dark Mode + Logout */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0 }}>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{
+                background: "transparent",
+                border: `2px solid ${darkMode ? "rgba(255,255,255,0.3)" : "#C2185B"}`,
+                borderRadius: "20px",
+                padding: "7px 14px",
+                cursor: "pointer",
+                color: darkMode ? "#E0E0E0" : "#C2185B",
+                fontWeight: "600",
+                fontSize: "0.85em",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              {darkMode ? <FiSun size={16} /> : <FiMoon size={16} />}
+              {darkMode ? "Light" : "Dark"}
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.href = "/login";
+              }}
+              style={{
+                background: "#dc3545",
+                border: "none",
+                borderRadius: "20px",
+                padding: "7px 14px",
+                cursor: "pointer",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "0.85em"
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {activeMenu === "dashboard" && (

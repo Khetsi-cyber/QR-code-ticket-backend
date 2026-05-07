@@ -20,7 +20,8 @@ import {
   FiLoader
 } from "react-icons/fi";
 
-export default function DriverDashboard({ showToast, darkMode = false }) {
+export default function DriverDashboard({ showToast, darkMode: darkModeProp = false }) {
+  const [darkMode, setDarkMode] = useState(darkModeProp);
   const [activeMenu, setActiveMenu] = useState('dashboard'); // 'dashboard', 'bulkTickets', 'scanQR', 'schedule', 'alerts', 'seating'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [buses, setBuses] = useState([]);
@@ -889,6 +890,49 @@ export default function DriverDashboard({ showToast, darkMode = false }) {
               {activeMenu === 'schedule' && 'Create Bus Schedule'}
               {activeMenu === 'alerts' && 'Report Service Alert'}
             </h2>
+          </div>
+
+          {/* Dark Mode + Logout */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{
+                background: "transparent",
+                border: `2px solid ${darkMode ? "rgba(255,255,255,0.3)" : "#C2185B"}`,
+                borderRadius: "20px",
+                padding: "7px 14px",
+                cursor: "pointer",
+                color: darkMode ? "#E0E0E0" : "#C2185B",
+                fontWeight: "600",
+                fontSize: "0.85em",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              {darkMode ? <FiSun size={16} /> : <FiMoon size={16} />}
+              {darkMode ? "Light" : "Dark"}
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.href = "/login";
+              }}
+              style={{
+                background: "#dc3545",
+                border: "none",
+                borderRadius: "20px",
+                padding: "7px 14px",
+                cursor: "pointer",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "0.85em"
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
 
